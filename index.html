@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sedekah Kilat Guru (SKIL Guru) — Transparansi Kas Solidaritas</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Chart.js for High-Resolution Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Loading Spinner Overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Menghubungkan ke Google Sheets...</div>
+  </div>
+
+  <!-- Main Application Wrapper -->
+  <div class="app-container">
+    
+    <!-- TOP NAVBAR -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo-icon">🤲</div>
+        <div class="brand-text">
+          <h1>SDIT AM— SKIL Guru</h1>
+          <p>Rekapitulasi Dana Sosial Kilat & Solidaritas Pendidik</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <span class="role-pill" id="header-role-badge">🔑 MODE: GURU ADMIN (KELOLA)</span>
+
+        <!-- Role Toggler (Admin vs Kepsek) -->
+        <div class="role-tabs">
+          <button type="button" class="role-tab-btn active" id="tab-admin">Mode Admin</button>
+          <button type="button" class="role-tab-btn" id="tab-kepsek">Mode Kepsek</button>
+        </div>
+
+        <button type="button" class="btn-glass" id="btn-sync" title="Segarkan Data dari Spreadsheet">
+          🔄 <span>Sync Data</span>
+        </button>
+
+        <button type="button" class="btn-glass" id="btn-copy-kepsek" title="Salin Tautan Khusus Kepala Sekolah">
+          🔗 <span>Salin Link Kepsek</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- BANNER KHUSUS MODE KEPALA SEKOLAH -->
+    <div class="kepsek-banner" id="kepsek-banner">
+      <span style="font-size:1.4rem;">🏛️</span>
+      <div>
+        <strong>Pusat Transparansi & Akuntabilitas Kas Guru — Mode Pantau Resmi (Read-Only)</strong>
+        <div style="font-size:0.8rem; color:#4338CA; margin-top:2px;">
+          Selamat datang Bapak/Ibu Kepala Sekolah. Halaman ini menyajikan saldo aktual, statistik, serta nota bukti otentik langsung dari Google Drive sekolah tanpa risiko kesalahan manipulasi data.
+        </div>
+      </div>
+    </div>
+
+    <!-- STAT CARDS ROW (3 GLASS CARDS) -->
+    <section class="stats-grid">
+      <!-- Card 1: Saldo Kas Saat Ini -->
+      <div class="stat-card card-saldo">
+        <div class="stat-header">
+          <span class="stat-label">
+            <span class="stat-label-icon">💰</span>
+            Saldo Kas Saat Ini
+          </span>
+          <span class="stat-badge">REALTIME SURPLUS</span>
+        </div>
+        <div class="stat-value" id="stat-saldo">Rp 0</div>
+        <div class="stat-meta">
+          <span>🕒</span>
+          <span id="stat-meta-saldo">Memuat sinkronisasi...</span>
+        </div>
+      </div>
+
+      <!-- Card 2: Total Uang Masuk -->
+      <div class="stat-card card-masuk">
+        <div class="stat-header">
+          <span class="stat-label">
+            <span class="stat-label-icon">📥</span>
+            Total Uang Masuk
+          </span>
+          <span class="stat-badge">DEBIT KAS</span>
+        </div>
+        <div class="stat-value" id="stat-masuk">Rp 0</div>
+        <div class="stat-meta">
+          <span>👥</span>
+          <span id="stat-meta-masuk">0 donasi tercatat</span>
+        </div>
+      </div>
+
+      <!-- Card 3: Total Pengeluaran -->
+      <div class="stat-card card-keluar">
+        <div class="stat-header">
+          <span class="stat-label">
+            <span class="stat-label-icon">📤</span>
+            Total Pengeluaran
+          </span>
+          <span class="stat-badge">KREDIT KAS</span>
+        </div>
+        <div class="stat-value" id="stat-keluar">Rp 0</div>
+        <div class="stat-meta">
+          <span>❤️</span>
+          <span id="stat-meta-keluar">0 kegiatan sosial</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- QUICK ACTION COMMAND PANEL (KHUSUS ADMIN) -->
+    <section class="quick-action-bar" id="quick-action-bar">
+      <div class="quick-action-info">
+        <div class="badge-bolt">⚡</div>
+        <div>
+          <h3>Pencatatan Cepat • Tanpa Hambatan Login</h3>
+          <p>Catat sedekah spontan dan penyaluran darurat dalam &lt; 10 detik. Bukti foto otomatis terkompresi.</p>
+        </div>
+      </div>
+
+      <div class="quick-action-buttons">
+        <button type="button" class="btn-action-primary" id="btn-catat-masuk">
+          <span>➕</span> CATAT UANG MASUK
+        </button>
+        <button type="button" class="btn-action-danger" id="btn-catat-keluar">
+          <span>➖</span> CATAT PENGELUARAN
+        </button>
+      </div>
+    </section>
+
+    <!-- ANALYTICS & CHARTS ROW -->
+    <section class="charts-grid">
+      <!-- Donut Chart: Komposisi -->
+      <div class="chart-card">
+        <h3 class="chart-title">Rasio Perputaran Kas</h3>
+        <p class="chart-subtitle">Perbandingan dana sedekah masuk vs santunan tersalurkan</p>
+        <div class="chart-wrapper">
+          <canvas id="chartDonut"></canvas>
+        </div>
+      </div>
+
+      <!-- Bar Chart: Tren Bulanan -->
+      <div class="chart-card">
+        <h3 class="chart-title">Tren Aliran Kas Semester Gasal</h3>
+        <p class="chart-subtitle">Stabilitas perolehan sedekah dan realisasi bantuan per bulan</p>
+        <div class="chart-wrapper">
+          <canvas id="chartBar"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- BUKU KAS BESAR / LEDGER TABEL -->
+    <section class="ledger-card">
+      <div class="ledger-header">
+        <div class="ledger-title-area">
+          <h2>Buku Kas Besar &amp; Rekam Jejak Penyaluran</h2>
+          <p id="ledger-counter">Menampilkan transaksi kas guru</p>
+        </div>
+
+        <div class="ledger-filters">
+          <!-- Search Input -->
+          <div class="search-input-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-transaksi" placeholder="Cari nama guru, santunan, nominal...">
+          </div>
+
+          <!-- Kategori Filter -->
+          <select class="select-filter" id="filter-kategori">
+            <option value="all">Semua Aliran Kas</option>
+            <option value="masuk">Hanya Uang Masuk</option>
+            <option value="keluar">Hanya Pengeluaran</option>
+          </select>
+
+          <!-- Bulan Filter -->
+          <select class="select-filter" id="filter-bulan">
+            <option value="all">Semua Bulan</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Responsive Table -->
+      <div class="table-responsive">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Tipe Mutasi</th>
+              <th>Nominal</th>
+              <th>Keterangan &amp; Donatur / Penerima</th>
+              <th>Bukti Nota</th>
+              <th id="th-aksi">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="ledger-tbody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- STICKY BOTTOM BAR (MOBILE THUMB ZONE) -->
+  <div class="mobile-thumb-bar" id="mobile-thumb-bar">
+    <button type="button" class="btn-thumb masuk" id="btn-mobile-masuk">
+      <span>➕</span> + MASUK
+    </button>
+    <button type="button" class="btn-thumb keluar" id="btn-mobile-keluar">
+      <span>➖</span> - KELUAR
+    </button>
+  </div>
+
+  <!-- =========================================================================
+       MODALS
+       ========================================================================= -->
+
+  <!-- 1. MODAL CATAT UANG MASUK -->
+  <div class="modal-overlay" id="modal-masuk">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <span style="font-size:1.3rem;">📥</span>
+          <h3>Catat Uang Masuk (Sedekah / Iuran)</h3>
+        </div>
+        <button type="button" class="modal-close-btn modal-close-trigger">&times;</button>
+      </div>
+
+      <form id="form-masuk">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Tanggal Transaksi *</label>
+            <input type="date" class="form-input" id="masuk-tanggal" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nominal Uang (Rupiah) *</label>
+            <input type="text" class="form-input nominal-input" id="masuk-nominal" placeholder="0" required inputmode="numeric">
+            <!-- Preset Chips -->
+            <div class="preset-chips">
+              <button type="button" class="preset-chip" data-val="20000">+20k</button>
+              <button type="button" class="preset-chip" data-val="50000">+50k</button>
+              <button type="button" class="preset-chip" data-val="100000">+100k</button>
+              <button type="button" class="preset-chip" data-val="200000">+200k</button>
+              <button type="button" class="preset-chip" data-val="500000">+500k</button>
+              <button type="button" class="preset-chip" data-val="clear">Reset</button>
+            </div>
+            <div class="terbilang-helper" id="masuk-terbilang"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Keterangan / Donatur *</label>
+            <textarea class="form-textarea" id="masuk-keterangan" rows="2" placeholder="Contoh: Sedekah Jumat berkah guru Matematika &amp; IPA..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Unggah Bukti Foto (Opsional)</label>
+            <div class="upload-dropzone" id="masuk-dropzone">
+              <div class="upload-icon">📷</div>
+              <div class="upload-text">Sentuh untuk Buka Kamera / Pilih Foto</div>
+              <div class="upload-hint">Foto otomatis dikompres ke resolusi optimal (&lt; 300 KB)</div>
+            </div>
+            <input type="file" id="masuk-file" accept="image/*" style="display:none;">
+            <div class="image-preview-container" id="masuk-preview"></div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary modal-close-trigger">Batal</button>
+          <button type="submit" class="btn-submit" id="btn-submit-masuk" style="background:#059669;">
+            <span>💾</span> Simpan Uang Masuk
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. MODAL CATAT PENGELUARAN KAS -->
+  <div class="modal-overlay" id="modal-keluar">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <span style="font-size:1.3rem;">📤</span>
+          <h3>Catat Pengeluaran Kas Sosial</h3>
+        </div>
+        <button type="button" class="modal-close-btn modal-close-trigger">&times;</button>
+      </div>
+
+      <form id="form-keluar">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Tanggal Pengeluaran *</label>
+            <input type="date" class="form-input" id="keluar-tanggal" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nominal Pengeluaran (Rupiah) *</label>
+            <input type="text" class="form-input nominal-input" id="keluar-nominal" placeholder="0" required inputmode="numeric" style="color:#E11D48;">
+            <div class="terbilang-helper" id="keluar-terbilang"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Keterangan Peruntukan &amp; Penerima *</label>
+            <textarea class="form-textarea" id="keluar-keterangan" rows="2" placeholder="Contoh: Beli parcel buah RSUD &amp; amplop santunan Bu Rahma..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Bukti Nota / Kuitansi / Foto Kegiatan</label>
+            <div class="upload-dropzone" id="keluar-dropzone">
+              <div class="upload-icon">🧾</div>
+              <div class="upload-text">Foto Nota Pembelian / Bukti Serah Terima</div>
+              <div class="upload-hint">Kompresi otomatis menghemat ruang Google Drive</div>
+            </div>
+            <input type="file" id="keluar-file" accept="image/*" style="display:none;">
+            <div class="image-preview-container" id="keluar-preview"></div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary modal-close-trigger">Batal</button>
+          <button type="submit" class="btn-submit" id="btn-submit-keluar" style="background:#E11D48;">
+            <span>💾</span> Simpan Pengeluaran Kas
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. MODAL EDIT TRANSAKSI -->
+  <div class="modal-overlay" id="modal-edit">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <span style="font-size:1.3rem;">✏️</span>
+          <h3>Koreksi Transaksi</h3>
+        </div>
+        <button type="button" class="modal-close-btn modal-close-trigger">&times;</button>
+      </div>
+
+      <form id="form-edit">
+        <input type="hidden" id="edit-id">
+        <div class="modal-body">
+          <div style="font-size:0.75rem; color:var(--text-muted); font-family:var(--font-mono);">
+            ID Transaksi: <span id="edit-ref-display" style="font-weight:700; color:var(--primary);"></span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Jenis Transaksi</label>
+            <select class="form-input" id="edit-tipe">
+              <option value="Masuk">Uang Masuk (Sedekah/Iuran)</option>
+              <option value="Keluar">Pengeluaran (Santunan/Bantuan)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tanggal Transaksi</label>
+            <input type="date" class="form-input" id="edit-tanggal" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nominal (Rupiah)</label>
+            <input type="text" class="form-input nominal-input" id="edit-nominal" required inputmode="numeric">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Keterangan / Keperluan</label>
+            <textarea class="form-textarea" id="edit-keterangan" rows="2" required></textarea>
+          </div>
+
+          <div id="edit-existing-proof" style="display:none;"></div>
+
+          <div class="form-group">
+            <label class="form-label">Ganti Bukti Foto (Opsional)</label>
+            <div class="upload-dropzone" id="edit-dropzone">
+              <div class="upload-icon">🔄</div>
+              <div class="upload-text">Pilih Foto Baru untuk Mengganti</div>
+            </div>
+            <input type="file" id="edit-file" accept="image/*" style="display:none;">
+            <div class="image-preview-container" id="edit-preview"></div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="justify-content:space-between;">
+          <button type="button" class="btn-secondary" id="btn-trigger-delete" style="color:#DC2626; border-color:#FECDD3;">
+            🗑️ Hapus
+          </button>
+          <div style="display:flex; gap:0.5rem;">
+            <button type="button" class="btn-secondary modal-close-trigger">Batal</button>
+            <button type="submit" class="btn-submit" id="btn-submit-edit">
+              Simpan Perubahan
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. MODAL KONFIRMASI HAPUS (DANGER) -->
+  <div class="modal-overlay" id="modal-delete">
+    <div class="modal-card" style="max-width:420px; text-align:center;">
+      <div style="padding:1.75rem 1.5rem 1rem 1.5rem;">
+        <div style="font-size:3rem; margin-bottom:0.75rem;">⚠️</div>
+        <h3 style="font-family:var(--font-heading); font-size:1.2rem; color:#991B1B; margin-bottom:0.5rem;">Hapus Transaksi Ini?</h3>
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:1rem;">
+          Tindakan ini akan menghapus catatan dari Google Sheets secara permanen.
+        </p>
+
+        <div style="background:#F1F5F9; border-radius:10px; padding:0.85rem; text-align:left; font-size:0.82rem; margin-bottom:1rem; border:1px solid #E2E8F0;">
+          <div style="font-family:var(--font-mono); color:var(--text-muted); font-size:0.75rem;" id="delete-tx-id"></div>
+          <div style="font-weight:700; color:var(--text-primary); margin:4px 0;" id="delete-tx-keterangan"></div>
+          <div style="font-family:var(--font-mono); font-weight:700; color:#DC2626;" id="delete-tx-nominal"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="justify-content:center;">
+        <button type="button" class="btn-secondary modal-close-trigger">Batal / Simpan</button>
+        <button type="button" class="btn-submit" id="btn-confirm-delete" style="background:#DC2626;">
+          Ya, Hapus Data
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. LIGHTBOX BUKTI NOTA -->
+  <div class="modal-overlay" id="modal-lightbox">
+    <div class="modal-card lightbox-card">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <span>🧾</span>
+          <h3 id="lightbox-caption">Bukti Nota Transaksi</h3>
+        </div>
+        <button type="button" class="modal-close-btn modal-close-trigger">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:1rem; text-align:center;">
+        <img id="lightbox-img" class="lightbox-image" src="" alt="Bukti Nota">
+      </div>
+      <div class="modal-footer" style="background:rgba(15, 23, 42, 0.95); border-color:rgba(255, 255, 255, 0.1);">
+        <button type="button" class="btn-secondary modal-close-trigger" style="background:transparent; color:#fff; border-color:rgba(255,255,255,0.3);">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
